@@ -13,6 +13,8 @@ const TWO_UP_PAIRS: Record<TwoUpPair, [VersionId, VersionId]> = {
   'v1-v2': ['v1', 'v2'],
 };
 
+const CUSTOM_URLS_STORAGE_KEY = 'group5_uiux_custom_urls_v1';
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('three-up');
   const [twoUpPair, setTwoUpPair] = useState<TwoUpPair>('original-v2');
@@ -21,6 +23,39 @@ export default function App() {
   const [frameHeight, setFrameHeight] = useState<number>(680);
   const [showDetails, setShowDetails] = useState<boolean>(true);
   const [reloadSignal, setReloadSignal] = useState<number>(0);
+  const [customUrls, setCustomUrls] = useState<Partial<Record<VersionId, string>>>(() => {
+    try {
+      const saved = window.localStorage.getItem(CUSTOM_URLS_STORAGE_KEY);
+      return saved ? (JSON.parse(saved) as Partial<Record<VersionId, string>>) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleUpdateUrl = (id: VersionId, nextUrl: string) => {
+    setCustomUrls((prev) => {
+      const updated = {...prev, [id]: nextUrl};
+      try {
+        window.localStorage.setItem(CUSTOM_URLS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore storage errors
+      }
+      return updated;
+    });
+  };
+
+  const handleResetUrl = (id: VersionId) => {
+    setCustomUrls((prev) => {
+      const updated = {...prev};
+      delete updated[id];
+      try {
+        window.localStorage.setItem(CUSTOM_URLS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore storage errors
+      }
+      return updated;
+    });
+  };
 
   const visibleVersions = useMemo(() => {
     if (layoutMode === 'three-up') {
@@ -289,6 +324,9 @@ export default function App() {
               <LiveViewportPane
                 key={version.id}
                 version={version}
+                customUrl={customUrls[version.id]}
+                onUpdateUrl={(nextUrl) => handleUpdateUrl(version.id, nextUrl)}
+                onResetUrl={() => handleResetUrl(version.id)}
                 viewportPreset={viewportPreset}
                 frameHeight={frameHeight}
                 reloadSignal={reloadSignal}
@@ -324,28 +362,31 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {BUILD_VERSIONS.map((version) => (
-              <a
-                key={version.id}
-                href={version.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-start justify-between gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-600 transition-colors"
-              >
-                <div className="min-w-0">
-                  <div className="text-xs text-slate-500">
-                    {version.stageLabel} · {version.methodology}
+            {BUILD_VERSIONS.map((version) => {
+              const targetUrl = customUrls[version.id] || version.url;
+              return (
+                <a
+                  key={version.id}
+                  href={targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-start justify-between gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-600 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <div className="text-xs text-slate-500">
+                      {version.stageLabel} · {version.methodology}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {version.title} — {version.subtitle}
+                    </div>
+                    <div className="mt-1 font-mono text-xs text-slate-500 truncate">
+                      {targetUrl}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                    {version.title} — {version.subtitle}
-                  </div>
-                  <div className="mt-1 font-mono text-xs text-slate-500 truncate">
-                    {version.url}
-                  </div>
-                </div>
-                <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0 mt-1 transition-colors" />
-              </a>
-            ))}
+                  <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0 mt-1 transition-colors" />
+                </a>
+              );
+            })}
           </div>
         </section>
       </main>

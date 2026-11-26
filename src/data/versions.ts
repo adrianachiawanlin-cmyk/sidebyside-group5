@@ -27,7 +27,7 @@ export const BUILD_VERSIONS: BuildVersion[] = [
     stageLabel: 'Baseline',
     title: 'Original Replica',
     subtitle: 'Unmodified Reference Build',
-    url: 'https://amazon-not-enhanced-group-5-ownh7t1a9-ac-8835.vercel.app/',
+    url: 'https://amazon-not-enhanced-group-5-one.vercel.app/',
     methodology: 'Faithful baseline replication',
     summary:
       'Preserves the standard multi-row navigation density, legacy account menu hierarchy, and baseline storefront interaction patterns prior to usability intervention.',
